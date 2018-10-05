@@ -2,12 +2,14 @@ import numpy as np
 
 import helpers as hlp
 
-def gauss_solve(A : np.ndarray, f : np.ndarray, full=False): 		## full=True => returning solution and inverse matrix
+def gauss_solve(A : np.ndarray, f : np.ndarray, 
+		full=False, eps=1e-17): 				## full=True => returning solution and inverse matrix
+									## eps - zero tolerance
 	hlp.verify_args(A, f)
 	n = A.shape[0]
-	inv = None							
+	ext = np.concatenate((A, f), axis=1)				## transforming the extended matrix we get solution
 	if(full):
-		inv = np.identity(n)					## get inv matrix by doing same transformations
+		ext = np.concatenate((ext, np.identity(n)), axis=1)	## get inv matrix by doing same transformations
 									## with identity matrix
 									## straight cycle
 	for i in range(n - 1):
@@ -15,16 +17,23 @@ def gauss_solve(A : np.ndarray, f : np.ndarray, full=False): 		## full=True => r
 		k = np.argmax(np.abs(col))				## searching for max abs element which are lower
 									## than the current
 		k += i							## counting its index
-		if((np.abs(A[k, i]) < 1e-15)):
+		if((np.abs(A[k, i]) < eps)):
 			continue
-		A[k, :], A[i, :] = A[i, :], A[k, :].copy()		## swapping
-		f[k], f[i] = f[i], f[k]
-		if(full):	
-			inv[k, :], inv[i, :] = inv[i, :], inv[k, :].copy()	## swapping
+		ext[k, :], ext[i, :] = ext[i, :], ext[k, :].copy()	## swapping
 		for j in range(i + 1, n):
-			A[j, :] -= (A[j, i]/A[i, i])*A[i, :]
-			A[j, :] -= (A[j, i]/A[i, i])*A[i, :]
-			if(full):	
-				f[j] -= (A[j, i]/A[i, i])*f[i]
- 									## backwards cycle
-	
+			ext[j, :] -= (ext[j, i]/ext[i, i])*ext[i, :]
+
+	if(np.abs(ext[n - 1, n -1]) < eps):
+		raise ValueError('Singular matrix; Aborting') 
+
+	for i in reversed(range(1, n)):					## backwards cycle
+		for j in reversed(range(i)):
+			ext[j, :] -= (ext[j,i]/ext[i,i])*ext[i, :]
+	for i in range(n):
+		ext[i,] /= ext[i,i]	
+	u = ext[:, n]							## solution
+	if(full):
+		inv = ext[:, n + 1 :]
+		return u, inv
+	return u
+		
