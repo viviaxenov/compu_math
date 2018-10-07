@@ -31,3 +31,4 @@ def verify_args(A : np.ndarray, f : np.ndarray) -> bool:
 	if(shape[0] != f.shape[0]):
 		raise ValueError("Matrix and right part should have same size; Having {0:d} and {1:d}"
 					.format(shape[0], f.shape[0]))
+	return True
