@@ -1,6 +1,6 @@
 import numpy as np
 
-import helpers as hlp
+import methods.helpers as hlp
 
 max_iter = 15000
 def_eps = 1e-10
@@ -49,6 +49,9 @@ def solve(A : np.ndarray, u_0 : np.ndarray, f : np.ndarray, eps : np.float64=def
 		ValueError - if number of iteration exceeds maximal (zm.max_iter)
 	"""
 	hlp.verify_args(A, f)
+	input_shape = f.shape
+	f = f.reshape([f.shape[0], 1])
+	u_0 = u_0.reshape([u_0.shape[0], 1])
 	if(A.shape[0] != u_0.shape[0]):
 		raise ValueError("Matrix and solution vector should have same size; Having {0:d} and {1:d}"
 					.format(A.shape[0], u.shape[0]))
@@ -69,5 +72,10 @@ def solve(A : np.ndarray, u_0 : np.ndarray, f : np.ndarray, eps : np.float64=def
 			raise RuntimeError("Number of iterations exceeded limit {0:d}; Aborting"
 					.format(i))
 	if(full):
-		return u_cur, np.dot(A, u_cur) - f, u_cur - u_prev, i
-	return u_cur 
+		res = np.dot(A, u_cur) - f
+		delta = u_cur - u_prev
+		u_cur = u_cur.reshape(input_shape)
+		res = res.reshape(input_shape)
+		delta = delta.reshape(input_shape)
+		return u_cur, res, delta, i
+	return u_cur.reshape(input_shape)

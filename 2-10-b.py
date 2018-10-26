@@ -1,13 +1,37 @@
 import numpy as np
 
-import gauss_method as gm
-import zeydel_method as zm
-import helpers as hlp
+import methods.gauss_method as gm
+import methods.zeydel_method as zm
 
-n = 90
+
+def get_matrix(n : int = 9) -> np.ndarray:
+	res = np.zeros([n + 1, n + 1])
+	for i in range(n):
+		res[i + 1][i] = 1.0
+		res[i][i + 1] = 1.0
+		res[i][i] = -2.0
+	res[0][0] = 1.0	
+	res[0][1] = 0.0
+	for i in range(n + 1):
+		res[n][i] = 2
+	return res
+
+def get_right_part(n: int = 9) -> np.ndarray:
+	f = np.zeros([n + 1, 1])
+	f[0] = 1
+	for i in range(1, n):
+		f[i] = 2.0/(i + 1)**2
+	f[n] = -n/3.0
+	return f
+
+def get_system(n : int = 9):
+	return get_matrix(n), get_right_part(n)  
+
+
+n = 9
 eps=1e-10
 
-A, f = hlp.get_system(n) 
+A, f = get_system(n) 
 u = np.linalg.solve(A, f) 
 ev = np.linalg.eigvals(A)
 det = np.linalg.det(A)
@@ -31,7 +55,6 @@ print("Zeydel method yeilded ({0:d} iterations):\n".format(n))
 print(z_u)
 print("Norm of difference with the reference: {0:0.3e}".format(np.linalg.norm(u - g_u)))
 print("||Au - f|| = {0:0.3e}, ||u_k+1 - u_k|| = {1:0.3e}".format(np.linalg.norm(res), np.linalg.norm(delta)))
-
 
 
 

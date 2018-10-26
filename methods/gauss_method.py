@@ -1,6 +1,6 @@
 import numpy as np
 
-import helpers as hlp
+import methods.helpers as hlp
 
 def solve(A : np.ndarray, f : np.ndarray, 
 		full=False, eps=1e-17): 				
@@ -19,6 +19,8 @@ def solve(A : np.ndarray, f : np.ndarray,
 		ValueError - if shapes of A, f don't correspond
 		ValueError - if matrix is singular (e.g. algo fails to find a non-zero element in the column)
 	"""
+	input_shape = f.shape
+	f = f.reshape([f.shape[0], 1])
 	hlp.verify_args(A, f)
 	n = A.shape[0]
 	ext = np.concatenate((A, f), axis=1)				## transforming the extended matrix we get solution
@@ -46,7 +48,7 @@ def solve(A : np.ndarray, f : np.ndarray,
 	for i in range(n):
 		ext[i,] /= ext[i,i]	
 	u = ext[:, n]							## solution
-	u = u.reshape(f.shape)
+	u = u.reshape(input_shape)
 	if(full):
 		inv = ext[:, n + 1 :]
 		return u, inv
