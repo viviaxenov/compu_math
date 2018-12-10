@@ -24,7 +24,6 @@ def solve(upper : np.array, main : np.array, lower : np.array, f : np.array) -> 
 		coef = lower[i - 1]/diag[i - 1]
 		diag[i] -= upper[i - 1]*coef
 		F[i] = F[i] - F[i - 1]*coef
-	print(diag, F, '\n\n')
 	for i in reversed(range(N - 1)):
 		coef =	upper[i]/diag[i + 1]
 		F[i] -= F[i + 1]*coef
