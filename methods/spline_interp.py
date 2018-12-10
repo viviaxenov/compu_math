@@ -60,6 +60,8 @@ class CubicSpline:
             raise (ValueError('Point is out of bounds [t_0; t_N]'))
         # find the segment t belongs to
         i = np.searchsorted(self.t, t, side='left') - 1
+        if i == -1:
+            return self.coefs[0, 0]                                 # problem with left boundary
         z = t - self.t[i]
         pows = np.array([1, z, z**2, z**3])
         return self.coefs[i]@pows
