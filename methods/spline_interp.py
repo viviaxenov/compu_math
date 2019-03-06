@@ -40,7 +40,6 @@ class CubicSpline:
         c = np.concatenate(([0], c, [0]))
         b = (f[1:] - f[:-1])/h - h*(c[1:] + 2*c[:-1])/3
         d = (c[1:] - c[:-1])/(3*h)
-        print(c)
         c = c[:-1]
 
         self.t = t
