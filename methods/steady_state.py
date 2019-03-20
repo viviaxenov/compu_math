@@ -62,11 +62,11 @@ class SteadyStateProblem:
         return np.stack((self.domain[::step], self.solution[::step]))
 
 
-def get_k_model(k_1: np.float64, k_2: np.float64, x_0: np.float64):
+def get_step_function(val_1: np.float64, val_2: np.float64, x_0: np.float64):
     def k_model(x):
         a = np.zeros_like(x)
-        a[x >= x_0] = k_2
-        a[x < x_0] = k_1
+        a[x >= x_0] = val_2
+        a[x < x_0] = val_1
         return a
     return k_model
 
@@ -84,7 +84,7 @@ def get_analytical(left_cond: tuple, right_cond:tuple, k: np.float64, q: np.floa
     alpha_r, beta_r, gamma_r = right_cond
     lam = np.sqrt(q/k)
 
-    b = np.array([gamma_l -beta_l*f/q, gamma_r - beta_r*f/q])
+    b = np.array([gamma_l - beta_l*f/q, gamma_r - beta_r*f/q])
     A = np.zeros([2, 2])
     A[0, 0] = alpha_l*lam + beta_l
     A[0, 1] = -alpha_l*lam + beta_l
@@ -98,4 +98,32 @@ def get_analytical(left_cond: tuple, right_cond:tuple, k: np.float64, q: np.floa
 
     return analytical
 
+def get_analytical_with_break(u_0, u_1, x_0, q_1, q_2, k, f_1, f_2):
+
+    lam_1 = np.sqrt(q_1/k)
+    lam_2 = np.sqrt(q_2/k)
+
+    A = np.zeros([4, 4])
+    A[0, 0] = 1.0
+    A[0, 1] = 1.0
+    A[1, :] = np.array([np.exp(lam_1*x_0), np.exp(-lam_1*x_0), -np.exp(lam_2*x_0), -np.exp(-lam_2*x_0)])
+    A[2, :] = np.array([lam_1*np.exp(lam_1*x_0), -lam_1*np.exp(-lam_1*x_0), -lam_2*np.exp(lam_2*x_0), lam_2*np.exp(-lam_2*x_0)])
+    A[3, :] = np.array([0, 0, np.exp(lam_2), np.exp(-lam_2)])
+
+    b = np.zeros(4)
+    b[0] = u_0 - f_1/q_1
+    b[1] = f_2/q_2 - f_1/q_1
+    b[3] = u_1 - f_2/q_2
+
+    C = np.linalg.solve(A, b)
+
+    print(C)
+
+    def solution(x: np.ndarray):
+        res = np.zeros_like(x)
+        res[x < x_0] = C[0]*np.exp(lam_1*x[x < x_0]) + C[1]*np.exp(-lam_1*x[x < x_0]) + f_1/q_1
+        res[x >= x_0] = C[2]*np.exp(lam_2*x[x >= x_0]) + C[3]*np.exp(-lam_2*x[x >= x_0]) + f_2/q_2
+        return res
+
+    return solution
 
