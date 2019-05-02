@@ -5,29 +5,9 @@ import scipy.linalg
 import matplotlib.pyplot as plt
 
 import methods.rosenbroke_method as rsb
+from methods.helpers import linear_ode_analytical as get_analytical
 
 
-def get_analytical(A : np.ndarray, y_0 : np.ndarray):
-    """"
-    Gets analytical solution for ODE system dy/dt = Ay, y(0) = y_0, where A=const
-    Args:
-        A - right part matrix
-        y_0 - initial condition
-    Returns:
-        u - function  : y(t)
-    Warning: works only if A has basis of real eigenvalues. Other cases weren't considered
-    """
-    eigvals, eigvecs = sp.linalg.eig(A)
-
-    def solution(t : np.ndarray) -> np.ndarray :
-        consts = sp.linalg.solve(eigvecs, y_0)
-        l = np.diag(eigvals)
-        times = np.stack((t,t))
-        exps = np.exp(l@times)
-        consts = np.diag(consts)
-        cords = consts@exps
-        return eigvecs@cords
-    return solution
 
 
 def stability_function(z : np.ndarray):

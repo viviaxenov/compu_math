@@ -40,7 +40,11 @@ class ConvectionProblem:
         self.solution = self.u_0(self.domain)
 
 
-    def step(self):
+    def step(self, tau=None):
+        old_tau = self.tau
+        if tau is not None:
+            self.tau = tau
+
         self.T += self.tau
         ts = lambda kh: self.phi(self.T) + (-self.phi_t(self.T)/self.a)*kh \
                         + (self.phi_tt(self.T)/self.a**2)*kh**2/2.0 + (-self.phi_ttt(self.T)/self.a**3)*kh**3/6.0
@@ -60,6 +64,9 @@ class ConvectionProblem:
 
         self.solution[:-3] += s1 + s2 + s3
         self.solution[-3:] = ts(np.array([-2.0*h, -h, 0.0]))
+
+        if tau is not None:
+            self.tau = old_tau
 
     def get_sample(self, n_samples:int):
         step = (self.domain.shape[0] - 1)//n_samples

@@ -57,7 +57,7 @@ def get_analytical(A : np.ndarray, y_0 : np.ndarray):
     def solution(t : np.ndarray) -> np.ndarray :
         consts = sp.linalg.solve(eigvecs, y_0)
         l = np.diag(eigvals)
-        times = np.stack((t,t))
+        times = np.stack((t, t))
         exps = np.exp(l@times)
         consts = np.diag(consts)
         cords = consts@exps

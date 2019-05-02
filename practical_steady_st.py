@@ -29,18 +29,18 @@ r_cond = (0.0, 1.0, u_1)
 #r_cond = (0.0, 1.0, 1.0)
 
 
-model_problem = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=1000)
+model_problem = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=81920, breakpoint=x_0)
 model_problem.solve()
 
 fig, ax = plt.subplots(1, 1)
-ax.plot(model_problem.domain, model_problem.solution, 'b-', label='Numeric')
-ax.plot(model_problem.domain, analytical(model_problem.domain), 'r--', label='Analytical')
-ax.axvline(x_0)
-ax.set_xlabel('$x$')
-ax.set_ylabel('$u(x)$')
-
-plt.grid(True)
-plt.show()
+# ax.plot(model_problem.domain, model_problem.solution, 'b-', label='Numeric')
+# ax.plot(model_problem.domain, analytical(model_problem.domain), 'r--', label='Analytical')
+# ax.axvline(x_0)
+# ax.set_xlabel('$x$')
+# ax.set_ylabel('$u(x)$')
+#
+# plt.grid(True)
+# plt.show()
 
 s = model_problem.get_sample(10)
 err = (s[1] - analytical(s[0]))/s[1]
@@ -55,9 +55,44 @@ with np.printoptions(precision=5, linewidth=1000):
     print(s[1])
     print('Relative difference:')
     print(err)
-    print(f'Error norm = {np.linalg.norm(err, ord=1):.1e}')
+    print(f'Error norm = {np.linalg.norm(err, ord=np.inf):.1e}')
     print('-----------------------------------------------------------------------------------------------------------\n\n')
 
+
+# Checking convergence rate
+
+# errors = []
+# steps = []
+#
+# for n_steps in [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000]:
+#     pr = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=n_steps, breakpoint=x_0)
+#     pr.solve()
+#     s = pr.get_sample(10)
+#     rel_err = (s[1] - analytical(s[0]))/s[1]
+#     err = np.linalg.norm(rel_err, ord=np.inf)
+#     step = 1./n_steps
+#
+#     errors += [err]
+#     steps += [step]
+#
+# errors = np.array(errors)
+# steps = np.array(steps)
+#
+# p = np.polyfit(np.log(steps)[:-1], np.log(errors)[:-1], deg=1)
+# line = np.poly1d(p)
+#
+# fig, ax = plt.subplots(1, 1)
+#
+# fig.suptitle('Скорость сходимости для задачи с постоянными коэффициентами')
+# ax.plot(np.log(steps), np.log(errors), 'bs')
+# ax.plot(np.log(steps), line(np.log(steps)), 'b--', label=f'$\\frac{{  d(\\log||x - x_r||) }}{{ d(\\log{{h}}) }} \\approx {p[0]:.1f}$')
+# ax.set_xlabel(r'$\log{h}$')
+# ax.set_ylabel(r'$\log{||u - u_r||_{\infty}}$')
+# ax.legend()
+# ax.grid()
+# plt.show()
+
+# -------------------------------------------------------------------------------------------------------------------------
 # Solving problem with varying coeffs
 
 k = lambda x: np.sin(x)**2 + 1
@@ -79,45 +114,46 @@ def q(x: np.ndarray):
 
 max_prec = 7
 
-test_problem = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=1000)
+test_problem = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=81920, breakpoint=x_0)
 test_problem.solve()
-ref_problem = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=1000000)
+ref_problem = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=1000000, breakpoint=x_0)
 ref_problem.solve()
 ref = ref_problem.get_sample(10)[1]
 
 with np.printoptions(precision=5, linewidth=1000):
     print('-------------------------- Varying coefs problem ----------------------------------------------------------\n')
     print('Domain sample:')
-    print(ref_problem.get_sample(10)[0])
+    print(test_problem.get_sample(10)[0])
     print('Numeric solution:')
     print(test_problem.get_sample(10)[1])
 
 
-errors = []
-steps = []
-
-for n_steps in [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000]:
-    pr = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=n_steps)
-    pr.solve()
-    s = pr.get_sample(10)[1]
-    err = np.linalg.norm(ref - s, ord=2)
-    step = 1./n_steps
-
-    errors += [err]
-    steps += [step]
-
-errors = np.array(errors)
-steps = np.array(steps)
-
-p = np.polyfit(np.log(steps)[:-1], np.log(errors)[:-1], deg=1)
-line = np.poly1d(p)
-
-fig, ax = plt.subplots(1, 1)
-
-ax.plot(np.log(steps), np.log(errors), 'bs')
-ax.plot(np.log(steps), line(np.log(steps)), 'b--', label=f'$\\frac{{  d(\\log||x - x_r||) }}{{ d(\\log{{h}}) }} \\approx {p[0]:.1f}$')
-ax.set_xlabel(r'$\log{h}$')
-ax.set_ylabel(r'$\log{||u - u_r||_1}$')
-ax.legend()
-ax.grid()
-plt.show()
+# errors = []
+# steps = []
+#
+# for n_steps in [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000]:
+#     pr = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=n_steps, breakpoint=x_0)
+#     pr.solve()
+#     s = pr.get_sample(10)[1]
+#     err = np.linalg.norm(ref - s, ord=2)
+#     step = 1./n_steps
+#
+#     errors += [err]
+#     steps += [step]
+#
+# errors = np.array(errors)
+# steps = np.array(steps)
+#
+# p = np.polyfit(np.log(steps)[:-1], np.log(errors)[:-1], deg=1)
+# line = np.poly1d(p)
+#
+# fig, ax = plt.subplots(1, 1)
+#
+# fig.suptitle('Скорость сходимости в задаче с переменными коэффициентами')
+# ax.plot(np.log(steps), np.log(errors), 'bs')
+# ax.plot(np.log(steps), line(np.log(steps)), 'b--', label=f'$\\frac{{  d(\\log||x - x_r||) }}{{ d(\\log{{h}}) }} \\approx {p[0]:.1f}$')
+# ax.set_xlabel(r'$\log{h}$')
+# ax.set_ylabel(r'$\log{||u - u_r||_{\infty}}$')
+# ax.legend()
+# ax.grid()
+# plt.show()

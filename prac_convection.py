@@ -14,37 +14,41 @@ def analytical(x: np.ndarray, t: np.ndarray) -> np.ndarray:
     return np.cos(c)
 
 
-n_steps = 100
+n_steps = 640
 period = 1.0
-c = 1.2
+c = 3.
 
 
 solver = ConvectionProblem(-2.0, np.cos, phi, phi_t, phi_tt, phi_ttt, c, n_steps)
 
-while solver.T < period:
+while solver.T + solver.tau <= period:
     solver.step()
+solver.step(tau=(period - solver.T))
+solver.T = period
 
 smp = solver.get_sample(10)
-asl = analytical(smp[0], np.full_like(smp[0], solver.T))
+asl = analytical(smp[0], np.full_like(smp[0], period))
 err = smp[1] - asl
 
 bound_analytical = analytical(solver.domain[-3:], np.full_like(solver.domain[-3:], solver.T))
 bound_err = solver.solution[-3:] - bound_analytical
 
 with np.printoptions(precision=6, linewidth=1000):
-    print(f'Courant parameter = {solver.c}')
+    print(f'Courant parameter = {solver.c}, t/h = {solver.tau/solver.h}')
     print('+----------------------------------------------------------------------------------------------------------')
     print(f'Domain      : {smp[0]}')
     print(f'Analytical  : {asl}')
     print(f'Numeric     : {smp[1]}')
-    print(f'Difference  : {err}')
+    with np.printoptions(precision=2, linewidth=1000):
+        print(f'Difference  : {err}')
     print()
     print(f'Maximal absolute difference: {np.linalg.norm(err, ord=np.inf):.5e}')
     print()
     print(f'Boundary    : {solver.domain[-3:]}')
     print(f'Analytical  : {bound_analytical}')
     print(f'Numeric     : {solver.solution[-3:]}')
-    print(f'Difference  : {bound_err}')
+    with np.printoptions(precision=3, linewidth=1000):
+        print(f'Difference  : {bound_err}')
     print('+----------------------------------------------------------------------------------------------------------')
 
 exit()

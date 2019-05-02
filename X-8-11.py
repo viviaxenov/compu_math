@@ -19,7 +19,7 @@ print(f'Stiffness (\\lambda_max/\\lambda_min) = {L:.1e} => system is stiff')
 T = 5.5
 n_samples = 10
 t = np.linspace(0, T, n_samples + 1, endpoint=True)
-n_iter = 25:memoryview
+n_iter = 25
 h = T/n_samples/n_iter
 
 coarse = np.zeros([u_0.shape[0], n_samples + 1])

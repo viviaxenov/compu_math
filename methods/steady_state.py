@@ -11,12 +11,13 @@ class SteadyStateProblem:
             k, q, f - equation coefs
             n_steps  - number of grid steps
     """
-    def __init__(self, left_cond : tuple, right_cond : tuple, k, q, f, n_steps : int, left_bound : np.float64=0.0, right_bound : np.float64 = 1.0):
+    def __init__(self, left_cond : tuple, right_cond : tuple, k, q, f, n_steps : int, left_bound : np.float64=0.0, right_bound : np.float64 = 1.0, breakpoint=None):
         self.left_cond = left_cond
         self.right_cond = right_cond
         self.left_bound = left_bound
         self.right_bound = right_bound
-
+        self.breakpoint = breakpoint
+        self.break_index = -1
         self.n_steps = n_steps
         self.h = (right_bound - left_bound)/(float(n_steps))
 
@@ -54,7 +55,28 @@ class SteadyStateProblem:
         lower[-1] = -alpha/self.h
         f[-1] = gamma
 
+        # filling conditions at breakpoint (if is any)
+        if self.breakpoint is not None:
+            i = self.domain.searchsorted(self.breakpoint)
+            self.break_index = i
+            k_p = self.k(self.domain[i])
+            k_m = self.k(self.domain[i - 1])
+
+            upper = np.delete(upper, i)
+            main = np.delete(main, i)
+            f = np.delete(f, i)
+            lower = np.delete(lower, i - 1)
+
+            upper[i - 1] = k_p
+            main[i - 1] = -(k_p + k_m)
+            lower[i - 2] = k_m
+            f[i - 1] = 0.0
+
         self.solution = s.solve(upper, main, lower, f)
+        if self.breakpoint is not None:
+            i = self.break_index
+            u = self.solution[i - 1]
+            self.solution = np.insert(self.solution, i - 1, u)
         return self.solution
 
     def get_sample(self, n_samples:int):
