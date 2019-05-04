@@ -1,5 +1,7 @@
 import numpy as np
 
+from abc import ABCMeta, abstractmethod
+
 class ConvectionProblem:
     """"
         Class for solving 1-D convection problem
@@ -10,11 +12,10 @@ class ConvectionProblem:
         Args:
             a <
     """
+    __metaclass__=ABCMeta
 
-    def __init__(self, a: np.float64, u_0, phi, phi_t, phi_tt, phi_ttt, c: np.float64,
+    def __init__(self, a: np.float64, u_0, c: np.float64,
                  n_steps: np.float64, left_bound : np.float64=0.0, right_bound : np.float64 = 1.0):
-        if a >= 0.0:
-            raise ValueError(f'a should be negative, you have {a} >= 0')
 
         self.a = a
         self.domain = np.linspace(left_bound, right_bound, n_steps + 1, endpoint=True)
@@ -25,10 +26,6 @@ class ConvectionProblem:
         self.solution = u_0(self.domain)
 
         self.u_0 = u_0
-        self.phi = phi
-        self.phi_t = phi_t
-        self.phi_tt = phi_tt
-        self.phi_ttt = phi_ttt
 
     def update_courant(self, c: np.float64):
         """"Sets tau in such way that Courant parameter is equal to the given (number of steps does not change)"""
@@ -38,6 +35,33 @@ class ConvectionProblem:
     def reset(self):
         self.T = 0.0
         self.solution = self.u_0(self.domain)
+
+    @abstractmethod
+    def step(self, tau=None):
+        """Integration step, depends on method"""
+
+    def integrate(self, T: np.float64):
+        while self.T + self.tau <= T:
+            self.step()
+        if self.T < T:
+            self.step(T - self.T)
+
+
+    def get_sample(self, n_samples:int):
+        step = (self.domain.shape[0] - 1)//n_samples
+        return np.stack((self.domain[::step], self.solution[::step]))
+
+
+class ConvectionThirdOrderScheme(ConvectionProblem):
+    def __init__(self, a: np.float64, u_0, phi, phi_t, phi_tt, phi_ttt, c: np.float64,
+                 n_steps: np.float64, left_bound : np.float64=0.0, right_bound : np.float64 = 1.0):
+        if a >= 0.0:
+            raise ValueError(f'a should be negative, you have {a} >= 0')
+        super().__init__(a, u_0, c, n_steps, left_bound, right_bound)
+        self.phi = phi
+        self.phi_t = phi_t
+        self.phi_tt = phi_tt
+        self.phi_ttt = phi_ttt
 
 
     def step(self, tau=None):
@@ -68,6 +92,22 @@ class ConvectionProblem:
         if tau is not None:
             self.tau = old_tau
 
-    def get_sample(self, n_samples:int):
-        step = (self.domain.shape[0] - 1)//n_samples
-        return np.stack((self.domain[::step], self.solution[::step]))
+
+class LaxSchemePeriodic(ConvectionProblem):
+    def step(self, tau=None):
+
+        c = 0.
+        if tau is not None:
+            c = self.a*tau/self.h
+        else:
+            c = self.c
+
+        u_p = np.roll(self.solution[:-1], -1)
+        u_m = np.roll(self.solution[:-1], 1)
+        self.solution[:-1] = 0.5*((u_p + u_m) - c*(u_p - u_m))
+        self.solution[-1] = self.solution[0]
+        if tau is not None:
+            self.T += tau
+        else:
+            self.T += self.tau
+
