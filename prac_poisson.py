@@ -13,13 +13,18 @@ def analytical(xx, yy):
 def f(xx, yy):
     return 2*yy*(1.0 - yy) + 2*(0.5 - xx)*(0.5 + xx)
 
-sz = 10
-ch_steps = 22
+
+sz = 10         # количество шагов сетки на сторону (узлов на 1 больше)
+ch_steps = 22   # количество итераций с чебвшёвским параметром на шаге
 u_0 = lambda xx, yy: np.zeros_like(xx)
+
 solver = PoissonProblem(sz, sz, (-0.5, 0.5, 0.0, 1.0), u_0, f)
-#total_it = solver.solve(n_iter=ch_steps, eps=1e-3)
-solver.iterate_chebyshev(32)
-total_it = 32
+
+total_it = solver.solve(n_iter=ch_steps, eps=1e-3)
+# делает шаги по n_iter итерций с чебышёвским параметром
+# пока невязка не станет меньше eps
+# возвращает общее число сделанных шагов
+# нужно подобрать (лапками) максимальное n_iter, при котором решение устойчиво, тогда будет работать быстро
 
 asl = analytical(solver.xx, solver.yy)[1:-1, 1:-1]
 nsl = solver.solution[1:-1, 1:-1]
@@ -33,7 +38,8 @@ print()
 with np.printoptions(precision=5, linewidth=10000):
     print(solver.solution)
 
-exit()
+# если не хочешь смотреть графики, раскомментируй
+# exit()
 
 fig = plt.figure()
 ax = fig.add_subplot(211, projection='3d')
