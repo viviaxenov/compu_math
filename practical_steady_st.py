@@ -6,33 +6,34 @@ import methods.steady_state as ss
 
 # solving model problem
 
-x_0 = 1/np.sqrt(5)
-q_1 = x_0
-q_2 = x_0**3
-# разрыв f!!!
-f_1 = 1
-f_2 = x_0**2 - 1
-k = np.sin(x_0)**2 + 1
-u_0 = 1.0
-u_1 = 2.0
+x_0 = 1/np.sqrt(2)  # точка разрыва
 
-analytical = ss.get_analytical_with_break(u_0, u_1, x_0, q_1, q_2, k, f_1, f_2)
-
-k = ss.get_array_const(k)
+k_1 = 1.
+q_1 = 1.            # до разрыва
+f_1 = np.exp(x_0)
+k_2 = np.sin(x_0)
+q_2 = 2.            # после
+f_2 = f_1   # разрыва f нету
 q = ss.get_step_function(q_1, q_2, x_0)
-f = ss.get_step_function(f_1, f_2, x_0)
+k = ss.get_step_function(k_1, k_2, x_0)
+f = ss.get_array_const(np.exp(x_0))
+
+
+u_0 = 1.0
+u_1 = 0.0
+
+analytical = ss.get_analytical_with_break(u_0, u_1, x_0, q_1, q_2, k_1, k_2, f_1, f_2)
+
 
 l_cond = (0.0, 1.0, u_0)
 r_cond = (0.0, 1.0, u_1)
+# НА СДАЧЕ НУЖНО КРУТИТЬ ЭТО!
+n_steps = 100   # число шагов, точек на 1 больше
 
-#l_cond = (0.0, 1.0, 0.0)
-#r_cond = (0.0, 1.0, 1.0)
-
-
-model_problem = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=81920, breakpoint=x_0)
+model_problem = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=n_steps, breakpoint=x_0)
 model_problem.solve()
 
-fig, ax = plt.subplots(1, 1)
+# fig, ax = plt.subplots(1, 1)
 # ax.plot(model_problem.domain, model_problem.solution, 'b-', label='Numeric')
 # ax.plot(model_problem.domain, analytical(model_problem.domain), 'r--', label='Analytical')
 # ax.axvline(x_0)
@@ -43,7 +44,8 @@ fig, ax = plt.subplots(1, 1)
 # plt.show()
 
 s = model_problem.get_sample(10)
-err = (s[1] - analytical(s[0]))/s[1]
+asl = analytical(s[0])
+err = (s[1][asl != 0] - asl[asl != 0])/asl[asl != 0]
 
 with np.printoptions(precision=5, linewidth=1000):
     print('-------------------------- Model problem ------------------------------------------------------------------\n')
@@ -68,7 +70,7 @@ with np.printoptions(precision=5, linewidth=1000):
 #     pr = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=n_steps, breakpoint=x_0)
 #     pr.solve()
 #     s = pr.get_sample(10)
-#     rel_err = (s[1] - analytical(s[0]))/s[1]
+#     rel_err = (s[1] - analytical(s[0]))
 #     err = np.linalg.norm(rel_err, ord=np.inf)
 #     step = 1./n_steps
 #
@@ -92,33 +94,27 @@ with np.printoptions(precision=5, linewidth=1000):
 # ax.grid()
 # plt.show()
 
-# -------------------------------------------------------------------------------------------------------------------------
-# Solving problem with varying coeffs
+# ----------------------------------------------------------------------------------------------------------------------
+#           ЗАДАЧА С ПЕРЕМЕННЫМИ КОЭФФИЦИЕНТАМИ
+# ----------------------------------------------------------------------------------------------------------------------
 
-k = lambda x: np.sin(x)**2 + 1
 
-
-def f(x: np.ndarray):
+def k(x: np.ndarray):
     res = np.zeros_like(x)
     res[x < x_0] = 1.0
-    res[x >= x_0] = x[x >= x_0]**2 - 1
+    res[x >= x_0] = np.exp(np.sin(x[x >= x_0]))
     return res
-
-
-def q(x: np.ndarray):
-    res = np.zeros_like(x)
-    res[x < x_0] = x[x < x_0]
-    res[x >= x_0] = x[x >= x_0]**3
-    return res
+f = lambda x: np.exp(x)
+q = ss.get_step_function(q_1, q_2, x_0)
 
 
 max_prec = 7
 
-test_problem = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=81920, breakpoint=x_0)
+test_problem = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=n_steps , breakpoint=x_0)
 test_problem.solve()
-ref_problem = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=1000000, breakpoint=x_0)
-ref_problem.solve()
-ref = ref_problem.get_sample(10)[1]
+# ref_problem = ss.SteadyStateProblem(l_cond, r_cond, k, q, f, n_steps=1000000, breakpoint=x_0)
+# ref_problem.solve()
+# ref = ref_problem.get_sample(10)[1]
 
 with np.printoptions(precision=5, linewidth=1000):
     print('-------------------------- Varying coefs problem ----------------------------------------------------------\n')

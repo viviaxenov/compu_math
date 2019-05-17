@@ -120,16 +120,16 @@ def get_analytical(left_cond: tuple, right_cond:tuple, k: np.float64, q: np.floa
 
     return analytical
 
-def get_analytical_with_break(u_0, u_1, x_0, q_1, q_2, k, f_1, f_2):
+def get_analytical_with_break(u_0, u_1, x_0, q_1, q_2, k_1, k_2, f_1, f_2):
 
-    lam_1 = np.sqrt(q_1/k)
-    lam_2 = np.sqrt(q_2/k)
+    lam_1 = np.sqrt(q_1/k_1)
+    lam_2 = np.sqrt(q_2/k_2)
 
     A = np.zeros([4, 4])
     A[0, 0] = 1.0
     A[0, 1] = 1.0
     A[1, :] = np.array([np.exp(lam_1*x_0), np.exp(-lam_1*x_0), -np.exp(lam_2*x_0), -np.exp(-lam_2*x_0)])
-    A[2, :] = np.array([lam_1*np.exp(lam_1*x_0), -lam_1*np.exp(-lam_1*x_0), -lam_2*np.exp(lam_2*x_0), lam_2*np.exp(-lam_2*x_0)])
+    A[2, :] = np.array([k_1*lam_1*np.exp(lam_1*x_0), -k_1*lam_1*np.exp(-lam_1*x_0), -k_2*lam_2*np.exp(lam_2*x_0), k_2*lam_2*np.exp(-lam_2*x_0)])
     A[3, :] = np.array([0, 0, np.exp(lam_2), np.exp(-lam_2)])
 
     b = np.zeros(4)
@@ -138,8 +138,6 @@ def get_analytical_with_break(u_0, u_1, x_0, q_1, q_2, k, f_1, f_2):
     b[3] = u_1 - f_2/q_2
 
     C = np.linalg.solve(A, b)
-
-    print(C)
 
     def solution(x: np.ndarray):
         res = np.zeros_like(x)
